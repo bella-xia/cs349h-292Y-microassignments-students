@@ -42,7 +42,7 @@ class PosStochasticComputing:
 
         rng : np.ndarray = np.random.binomial(1, prob, (nbits,)).astype(np.uint8) 
         cls.apply_bitflip(rng) # computation circuit
-        cls.apply_bitflip(rng) # write storage
+        # cls.apply_bitflip(rng) # write storage
         return rng
 
         # unreachable
@@ -55,11 +55,11 @@ class PosStochasticComputing:
         rng: np.ndarray = np.random.binomial(1, 0.5, (bitstream.shape[0], )).astype(np.uint8)
         cls.apply_bitflip(rng) # computation circuit
         rng = rng.astype(np.bool_)
-        cls.apply_bitflip(bitstream); cls.apply_bitflip(bitstream2) # read storage
+        # cls.apply_bitflip(bitstream); cls.apply_bitflip(bitstream2) # read storage
         cls.apply_bitshift(rng); cls.apply_bitshift(bitstream); cls.apply_bitshift(bitstream2) # computation
         weighted_sum : np.ndarray = np.where(rng, bitstream, bitstream2)
         cls.apply_bitflip(weighted_sum) # computation circuit
-        cls.apply_bitflip(weighted_sum) # write storage
+        # cls.apply_bitflip(weighted_sum) # write storage
         return weighted_sum
 
         # unreachable
@@ -69,11 +69,11 @@ class PosStochasticComputing:
     def stoch_mul(cls, bitstream : np.ndarray, bitstream2 : np.ndarray) -> np.ndarray:
         assert bitstream.shape == bitstream2.shape, "invalid bitstream multiplication, expected same length" 
 
-        cls.apply_bitflip(bitstream); cls.apply_bitflip(bitstream2) # read storage
+        # cls.apply_bitflip(bitstream); cls.apply_bitflip(bitstream2) # read storage
         cls.apply_bitshift(bitstream); cls.apply_bitshift(bitstream2) # computation
         prod : np.ndarray = bitstream & bitstream2
         cls.apply_bitflip(prod) # computation circuit
-        cls.apply_bitflip(prod) # write storage
+        # cls.apply_bitflip(prod) # write storage
         return prod
 
         # unreachable
@@ -81,7 +81,7 @@ class PosStochasticComputing:
 
     @classmethod
     def from_stoch(cls, result : np.ndarray) -> float:
-        cls.apply_bitflip(result) # read storage
+        # cls.apply_bitflip(result) # read storage
         cnt1, cnt2 = np.sum(result, dtype=np.uint32), result.shape[0]
         return cnt1 / cnt2
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
         PosStochasticComputing.APPLY_FLIPS = False
         PosStochasticComputing.APPLY_SHIFTS =False
 
-    #run_PART_X()
+    # run_PART_X()
 
     def run_PART_X_Q3():
         print("---- part x: effect of bit flips ---")
@@ -375,7 +375,7 @@ if __name__ == '__main__':
         PosStochasticComputing.APPLY_FLIPS = False
         PosStochasticComputing.APPLY_SHIFTS =False
 
-    # run_PART_X_Q3()
+    run_PART_X_Q3()
 
 
     # Part Y, apply static analysis
@@ -396,4 +396,4 @@ if __name__ == '__main__':
             print("running with save_rngs enabled")
             run_stochastic_computation(lambda : PART_Z_execute_rng_efficient_computation(value=v, N=1000, save_rngs=True), ntrials)
 
-    run_PART_Z()
+    # run_PART_Z()

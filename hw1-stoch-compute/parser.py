@@ -1,4 +1,3 @@
-import argparse
 import numpy as np
 from stochastic import PosStochasticComputing, StochasticComputingStaticAnalysis
 
@@ -213,18 +212,23 @@ class Parser:
         return lhs
 
 if __name__ == '__main__':
-    args_parser = argparse.ArgumentParser()
-    args_parser.add_argument('--eq', type=str, required=True)
-    args = args_parser.parse_args()
+    
+    eq : str = ''
+    spec : str = "Enter the expression to evaluate ('exit' or 'e' to quit): "
 
-    parser = Parser(args.eq)
-    node = parser.parse()
-    print(f'expression: {args.eq}')
-    print('AST repr:')
-    print(node)
-    print('evaluated via standard computing')
-    print('res:', node.eval_standard())
-    print('\nevaluated via stochastic computing (non-optimized)')
-    print('res:', node.eval_stoch())
-    print('\nevaluated via stochastic computing (optimized)')
-    print('res:', node.eval_stoch(optimize=True))
+    while True:
+        eq = input(spec)
+        if eq == 'e' or eq == 'exit':
+            print('exiting parser')
+            break
+        parser = Parser(eq)
+        node = parser.parse()
+        print(f'expression: {eq}')
+        print('AST repr:')
+        print(node)
+        print('evaluated via standard computing')
+        print('res:', node.eval_standard())
+        print('\nevaluated via stochastic computing (non-optimized)')
+        print('res:', node.eval_stoch())
+        print('\nevaluated via stochastic computing (optimized)')
+        print('res:', node.eval_stoch(optimize=True))

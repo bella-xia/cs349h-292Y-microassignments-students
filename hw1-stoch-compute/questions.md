@@ -31,8 +31,6 @@ With increasing bitstream length, the mean becomes closer to the precise value (
 Meanwhile, the variance becomes smaller.
 
 Q2. What is the smallest representable numeric value in a single 1000-bit stochastic bitstream? What happens when you try to generate a bitstream for this value -- do the bitstream values converge to the desired value?
-
-***I am a little confused about what is the "coverge" refering to specifically? something needs to increse for convergence?***
 ```bash
 --- terminal output --- 
 bitstream length: 10, total trial: 10000
@@ -118,16 +116,16 @@ Q1. What happens to the computational results when you introduce a per-bit bit-f
 --- terminal output --- 
 ----- disable per-bit bit-flip error -----
 ref=0.460000
-mean=0.460065
-std=0.015921
+mean=0.460255
+std=0.015763
 ----- per-bit bit-flip error probability = 0.0001 -----
 ref=0.460000
-mean=0.459944
-std=0.015625
+mean=0.460095
+std=0.015611
 ----- per-bit bit-flip error probability = 0.1 -----
 ref=0.460000
-mean=0.486118
-std=0.015812
+mean=0.471382
+std=0.015985
 ```
 When introducing an error probability of 0.0001, the result does not exhibit significant deviation from if no bit-flip error exists. However, when the error probability is 0.1, the empirical mean begins to deviate significantly from the expected value whereas the variance stays constant, suggesting higher inaccuracy.
 
@@ -136,16 +134,16 @@ Q2. What happens to the computational results when you introduce a per-bit bit-s
 --- terminal output --- 
 ----- disable per-bit bit-shift error -----
 ref=0.460000
-mean=0.459792
-std=0.015904
+mean=0.460035
+std=0.015878
 ----- per-bit bit-shift error probability = 0.0001 -----
 ref=0.460000
-mean=0.459920
-std=0.015514
+mean=0.460051
+std=0.015838
 ----- per-bit bit-shift error probability = 0.1 -----
 ref=0.460000
-mean=0.459899
-std=0.017028
+mean=0.459802
+std=0.016984
 ```
 Both when introducing an error probability of 0.0001 and 0.1, the epirical mean remains relatively identical to when no bit-shift error occurs. However, when bit bit-shift error probability is 0.1, the variance of the computation result increases, suggesting higher imprecision.
 
@@ -155,42 +153,42 @@ Q3. In summary, is the computation affected by these non-idealities? Do you see 
 ----- no error contrast trial -----
 bitstream length: 10, total trial: 10000
 ref=0.460000
-mean=0.457700
-std=0.157685
+mean=0.461980
+std=0.159225
 bitstream length: 100, total trial: 10000
 ref=0.460000
-mean=0.459766
-std=0.049684
+mean=0.459704
+std=0.050674
 bitstream length: 1000, total trial: 10000
 ref=0.460000
-mean=0.459852
-std=0.015695
+mean=0.459878
+std=0.015600
 ----- per-bit bit-flip error probability = 0.1 -----
 bitstream length: 10, total trial: 10000
 ref=0.460000
-mean=0.485550
-std=0.159750
+mean=0.469900
+std=0.157918
 bitstream length: 100, total trial: 10000
 ref=0.460000
-mean=0.485682
-std=0.050775
+mean=0.471132
+std=0.050271
 bitstream length: 1000, total trial: 10000
 ref=0.460000
-mean=0.485800
-std=0.015780
+mean=0.471329
+std=0.015763
 ----- per-bit bit-shift error probability = 0.1 -----
 bitstream length: 10, total trial: 10000
 ref=0.460000
-mean=0.457520
-std=0.169698
+mean=0.457370
+std=0.169928
 bitstream length: 100, total trial: 10000
 ref=0.460000
-mean=0.459418
-std=0.053126
+mean=0.459729
+std=0.054437
 bitstream length: 1000, total trial: 10000
 ref=0.460000
-mean=0.459657
-std=0.017125
+mean=0.460038
+std=0.017169
 ```
 Yes, computation is generally affected by the unidealities, provided that the occurance probability is high (e.g. a 0.1 erro probability). bitflip errors tends to make computation results more inaccurate, whereas bitshift errors have less impact on accuracy but tends to make result more inprecise. As the bitstream length increases (10 -> 100 -> 1000), the standard gradually decreases for all cases. Meanwhile, the pattern of accuracy drift in bitflip and precision drift in bitshift remain consistent, suggesting that the growth of length does not significantly affect unideality-induced deviations.
 
@@ -428,3 +426,59 @@ Come up with your own extension, application, or analysis tool for the stochasti
 - Build an stochastic computing analysis of your choosing. You may build up the existing bitstream size analysis to work with abstract syntax trees, or you may devise a new analysis that studies some other property of the computation, such as error propagation or correlation.
 
 - Implement an application using the stochastic computing paradigm. Examples from literature include image processing, ML inference, and LDPC decoding.
+
+I created a parser that automatically parse an input expression string and utilizes stochastic computing to calculate the result. The parser accepts:
+
+    - unipolar numerical values in range [0, 1]
+
+    - opcodes '*' and '+', for semantic reason here any expression 'a op[+] b' evaluates to 1/2 (a + b)
+
+    - front and back bracket '(' and ')' to indicate order of execution
+
+The parser will create a AST based on the string. The AST class contains native functions to
+
+    - evaluation via standard computing model, stochastic model with and without memory optimization
+
+    - static analysis to provide minimum bitstream length needed for the evaluation
+    
+    - static memory optimization across shared numerical values
+
+    - dynamic tracking of allocated bitstream bytes
+
+Here is a standard interface provided via the parser system:
+
+```terminal
+$ python parser.py 
+Enter the expression to evaluate ('exit' or 'e' to quit): (0.1 *0.01) + (0.1 * 0.1 * 0.3)
+expression: (0.1 *0.01) + (0.1 * 0.1 * 0.3)
+AST repr:
+OP[+
+ OP[*
+  NUM[0.1]
+  NUM[0.01]
+ ]
+ OP[*
+  OP[*
+   NUM[0.1]
+   NUM[0.1]
+  ]
+  NUM[0.30000000000000004]
+ ]
+]
+
+evaluated via standard computing
+res: 0.0020000000000000005
+
+evaluated via stochastic computing (non-optimized)
+using static analysis to derive bitstream length: 1000
+average allocation of numpy array memory: 5000 bytes
+res: 0.002029
+
+evaluated via stochastic computing (optimized)
+using static analysis to derive bitstream length: 1000
+average allocation of numpy array memory: 3002 bytes
+res: 0.0019490000000000002
+Enter the expression to evaluate ('exit' or 'e' to quit): exit
+exiting parser
+$
+```
