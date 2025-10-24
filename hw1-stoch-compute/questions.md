@@ -36,44 +36,72 @@ Q2. What is the smallest representable numeric value in a single 1000-bit stocha
 bitstream length: 10, total trial: 10000
 ref=0.100000
 mean=0.100440
-std=0.094931
+std=0.095046
 bitstream length: 100, total trial: 10000
 ref=0.010000
-mean=0.009941
-std=0.009867
+mean=0.009909
+std=0.009829
 bitstream length: 200, total trial: 10000
 ref=0.005000
-mean=0.005067
-std=0.005043
+mean=0.005030
+std=0.005014
 bitstream length: 500, total trial: 10000
 ref=0.002000
-mean=0.001967
-std=0.001973
+mean=0.002041
+std=0.002007
 bitstream length: 1000, total trial: 10000
 ref=0.001000
-mean=0.001003
-std=0.001002
+mean=0.001015
+std=0.001010
+bitstream length: 2000, total trial: 10000
+ref=0.001000
+mean=0.000987
+std=0.000988
 ```
 The smallest non-zero representable numeric value in a single 1000-bit stochastic bitstream is 1 / 1000. I am supposing this is what is suggested by the question cause the value 0 does not have a convergence problem, since a Bernoulli distribution with p(x=1) = 0 would always be accurately representing 0. 
 
-When attempting to represent the value 1 / 1000 over increasing bitstream length from 10 to 1000, the mean value across 10000 generations does converge to the desired value. For a 1000-bit stream, the mean was 0.001003, deviating by only +3e-6. Additionally, the variance decreases approximately inversely to the bitstream length, thus becoming smaller as the bitstream length increases.
+When attempting to represent the value 1 / 1000 over increasing bitstream length from 10 to 2000, we can observe a two-stage process. For any bitstream length n < 1000, the mean value converges to 1/n instad of 1 / 1000. Meanwhile, for any n >= 1000, it does converge properly to 1 / 1000.
 
-Q3. What stochastic bitstream length L do we need to represent a rational number V accurately with a single bitstream, assuming V is in (0,1]? Write the equation. How does this L scale with V? Denote L' as the number bits needed to represent V accurately as an integer (removing the leading "0."). How does L' scale with V? 
+Q3. What stochastic bitstream length L do we need to represent a rational number V accurately with a single bitstream, assuming V is in (0,1]? Write the equation. How does this L scale with V? Denote L' as the number bits needed to represent V accurately as an integer (removing the leading "0."). How does L' scale with V?
 
-As the convergence in Q2 suggests, to guarantee accurately representing a rational number V, V needs to be equal or greater than 1 / bitstream length (i.e. it needs to take on at least the weight of a single bit in the bitstream). This means that for any rational number V, we would need
+Due to confusion in the requirement "accurately representing number V" and subsequent questions, two methods are provided below:
 
-L = ceil(1 / V)
+Method 1:
 
-This equation can also be rewritten as finding the smallest positive integer L such that it satisfies
+    The exact representation of number V requires that with bitstream length L, there is some integer N where 
 
-L * V >= 1
+    V * N = L
 
-This means that L will scale inversely with V, or scale proportionally with 1 / V.
+    To find the smallest M that satisfies this condition, we will find the simpliest fraction representation of V =  N / L.
+
+    However, in this situation, the stochastic bitstream length L does not really scale with V. Depending on the scaling factor, L can either increase, decrease, or stay the same.
+
+    For example, suppose we have V = 2/5 = 0.4. The initial L is then 5.
+
+    - scale by 1.5, we have V' = 2/5 * 3/2 = 3/5, L stays the same
+
+    - scale by 1.75, we have V' = 2/5 * 7/4 = 7/10, L increases to 10
+
+    - scale by 2.5, we have V' = 2/5 * 5/2  = 1, L decreases to 1
+
+    This shows that scaling does not have traceable pattern with L.
+
+Method 2:
+
+    As the convergence in Q2 suggests, to guarantee accurately representing a rational number V, V needs to be equal or greater than 1 / bitstream length (i.e. it needs to take on at least the weight of a single bit in the bitstream). This means that for any rational number V, we would need
+
+    L = ceil(1 / V)
+
+    This equation can also be rewritten as finding the smallest positive integer L such that it satisfies
+
+    L * V >= 1
+
+    This means that L will scale inversely with V, or scale proportionally with 1 / V.
 
 Meanwhile, suppose we have V' = f(V) where f denotes the operation of removing the leading "0." and representing V as an integer. For integer-level presentation in traditional computing model, we use binary stream with increasing weights moving up the digits, where for any 1 in bit i (counting from right to left):
 
 [0, 0, 0, 1, 0, 1]
-         i=2
+        i=2
 
 The encoded value is 2^i. Therefore, to represent V' acccurately, we need to find the bit with the largest value encoded. We can derive this using
 

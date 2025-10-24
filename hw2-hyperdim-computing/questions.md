@@ -5,8 +5,23 @@
 For example "fox" would be translated to sequence ["f","o", "x"]. For simplicity, use a hypervector size of 10,000 to answer these questions unless otherwise stated.
 
 **Q1.** Construct a HDC-based string encoding for the word "fox". How did you encode the "fox" string? How similar is the hypervector for "fox" to the hypervector for "box" in your encoding? How similar is the hypervector for "xfo"? How similar is the hypervector for "car"? Please remark on the relative similarities, not the absolute distances.
+````
+---- terminal output ----
+0.2514
+0.4943
+0.4916
+````
+I encode fox string as 'f' [op-bundle] ([op-permute] 1 'o') [op-bundle] ([op-permute] 2 'x')
+The words "fox" and "box" are more similar than "fox" with "xfo" and with "car." The former pair has a hamming distance of 0.25, whereas the latter two pairs 0.5.
 
 **Q2.** Change your encoding so the order of the letters doesn't matter (apply the changes for this question only). What changes did you make? Please remark on the relative similarities, not the absolute distances.
+```
+---- terminal output ----
+0.2446
+0.0
+0.4928
+```
+I eliminated the use of permutation in each character, so that the result now is a set of bundled characters and order is discarded. "fox" now has a distance of 0 to "xfo", suggesting that they are essentially the same hypervector. The distance between "fox" and "box" and between "fox" and "car" remains relatively the same. 
 
 -------
 
@@ -14,7 +29,11 @@ For example "fox" would be translated to sequence ["f","o", "x"]. For simplicity
 
 **Q3.** Try modifying the hardware error rate (`perr`) with fixed hypervector size `10000`. How high can you make the hardware error until the two distributions begin to become visibly indistinguishable? What does it mean conceptually when the two distance distributions have a lot of overlap?
 
+The hardware error can become as high as 0.5 when the two distribution begin to become visibly indistiguishable. When the two distance distributions have a lot of overlaps, it means that the two words are equally similar / different from "fox".
+
 **Q4.** Try modifying the hypervector size (`SIZE`) with fixed hardware error rate `0.10`. How small can you make the word hypervectors before the two distributions begin to become visibly indistinguishable?
+
+The word hypervector size can becomes as small as 6 or 7 before the distributions begin to become visible indistinguishable.
 
 -----
 
@@ -36,7 +55,16 @@ __Task 1__: Implement the string and row encoding functions (`encode_string`, `e
 
 **Q1.** Describe how you encoded database rows as hypervectors. Write out the HD expression you used to encode each piece of information, and describe any atomic hypervectors you introduced.
 
+I encoded each distinct string (both field key and field value) as atomic hypervectors. 
+Then, with each row contains information in the format of 
+{ k1 : v1 , k2 : v2 , .... kn : vn}
+I encoded it as
+(k1 [op-bind] v1) [op-bundle] (k2 [op-bind] v2) [op-bundle] .... [op-bundle] (kn [op-bind] vn)
+
 **Q2.** Describe how you decoded the strings / database rows from hypervectors. Describe any HD operations you used to isolate the desired piece of information, and describe what item memory lookups you performed to recover information. If you're taking advantage of any HD operator properties to isolate information, describe how they do so.
+
+For decoding string with a hypervector, I just uses winner-take-all query functions I implemented previously.
+For decoding database row, I first need auxiliary information on the fieds keys. Therefore, I stores a copy of the keys when first inserting rows into the database. Provided a encoded row hypervector, I iteratively unbind the hypervector with each field key, and find the string closest to the unbind hypervector.
 
 --------
 
@@ -44,7 +72,13 @@ __Task 2__: Next, we'll implement routines for querying the data structure. Impl
 
 **Q3.** How did you implement the `get_value` query? Describe any HD operators and lookups you performed to implement this query.
 
+I first obtain the encoded row information based on the key specified.
+Then, to find the specified field, I first encode field to its corresponding hypervector. I perform unbind operation between the encoded row and the encoded field. This should give a hypervector that is close to the value hypervector being previously binded to the field hypervector. I then decode the value hypervector by using winner-take-all approach to find the closest string to it.
+
 **Q4.** How did you implement the `get_matches` query? Describe any HD operators and lookups you performed to implement this query. Try using lower threshold values. How high of a distance threshold can you set before you start seeing false positives in the returned results?
+
+For get matches, I first encode the field value dict into a row hypervector. I then leverage mathces function, which iterates through all row keys and return any key whose row hypervector has a hamming distance to the query hypervector that is smaller than the pre-specified threshold.
+For the first virus-plant query, I started seein false positives in a threshold of 0.43. For the second champion query, the false positives appear around a threshold of 0.50.
 
 -----
 
@@ -53,6 +87,10 @@ __Task 3__: Implement the `get_analogy` query, which given two records and a val
 _Tip_: If you want more information on this type of query, you can look up "What We Mean When We Say 'What's the Dollar of Mexico?'"
 
 **Q5.** How did you implement the `get_analogy` query? Describe how this is implemented using HD operators and item memory lookups. Why does your implementation work? You may want to walk through and HD operator properties you leveraged to complete this query.
+
+I first find the encoded row hypervector for both the target and the other key. In the current encoding scheme, I bind each value and key tuple. Based on the commutative and self-inversable property of bind operation, the key and vlaue are symmetric in this encoding representation. Therefore I use the same method as `get_value` function to obtain the field key corresponding to the target value.
+Specifically, with the target row hypervector, I first unbinds it with the target value, then uses winner-take-all approach to find the string closest to the resulting hypervector.
+After finding the field key of interest, I essentially repeat `get_value` function procedure to retrieve the value associated with this field key in the other-key row.
 
 ### Part C: Implementing an HDC Classifier [10 pts total, 2 pts/question, hdc-ml.py]
 
@@ -66,7 +104,21 @@ __Tips__: Try a simple pixel/image encoding first. For decoding operations, you 
 
 **Q1.** How did you encode pixels as a hypervector? Write out the HD expressions, and describe what atomic/basis hypervectors you used for the encodings. 
 
+There are three pieces of information in a pixel: row number, column number, and pixel value.
+In the current image representation, all pixels are binary, which means that we only need to take into account representing '0' and '1' bit.
+I create two atomic hypervectors, one for 1 encoding and one for 0 encoding. Based on the pixel value at each coordinate I use the corresponding atomic hypervector.
+There is a way to serialize row and column information by representing the location as loc = row * col-size + col. However, this requires dependency knowledge on the size of the image. To avoid this dependency, row and column information are encoded separately in this scheme. A row atomic hypervector and a column atomic hypervector are created for this representation. Based on the row number and column number, the row and column hypervectors are permuted by the offset.
+Finally, to aggregate all information in a readily retrievable form, I first bind row and column information together into a location hypervector. I then bind the pixel value hypervector to the location hypervector. The resuling encoding is as follows:
+
+Encode(pixel, row, col) = atomic-1 / atomic-0 [op-bind] (([op-permute] row-number atomic-row) [op-bind] ([op-permute col-number atomic-col]))
+
 **Q2.** How did you encode images as a hypervector? Write out the HD expressions, and describe any atomic/basis hypervectors in the expression. 
+
+To ensure that the final encoding is relatively close to each of the pixel-wise representation, I bundle individual pixel-level information together, so that the HD expression is
+
+Encode(image) = Encode(pixel[0,0], 0, 0) [op-bundle] Encode(pixel[0,1], 0, 1) [op-bundle] Encode(pixel[0,2], 0, 2) ... [op-bundle] Encode(pixel[1,0], 1, 0) .... [op-bundle] Encode(pixel[n-1,n-1], n-1, n-1) 
+
+No additional atomic/basis hypervector is introduced in this step.
 
 -----------------------
 
@@ -74,7 +126,11 @@ __Tips__: Try a simple pixel/image encoding first. For decoding operations, you 
 
 **Q3.** What happens to the classification accuracy when you reduce the hypervector size; how small of a size can you select before you see > 5% loss in accuracy? 
 
+The classification accuracy first increases to around 78%, but then gradually decreases. When the size is around 2000-3000, I start with see > 5% loss in accuracy.
+
 **Q4.** What happens to the classification accuracy when you introduce bit flips into the item memory's distance calculation? Note that you shold only apply bit flips during inference. How much error can you introduce before you see a > 5% loss in accuracy?
+
+The accuracy gradually decreases as bit flip erros are introduced. Around 0.2 bit errors would result in a >5% accuracy loss.
 
 ------------------------
 
@@ -87,3 +143,5 @@ __Tips__: Try a simple pixel/image encoding first. For decoding operations, you 
 You can find a sample of generated image `sample_generated.png` for number `7` in the folder.
 
 **Q5.** Use `test_generative_model` function to test your generative model. Include a few pictures outputted by your generative model in your submission.
+
+I stored a few generated images inside the "generated-images" folder in the submission.

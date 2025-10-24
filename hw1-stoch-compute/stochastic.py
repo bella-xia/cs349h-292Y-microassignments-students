@@ -260,8 +260,9 @@ if __name__ == '__main__':
         run_stochastic_computation(lambda : PART_A_Q2_computation(bitstream_len=500), ntrials)
         print('bitstream length: 1000, total trial: 10000')
         run_stochastic_computation(lambda : PART_A_Q2_computation(bitstream_len=1000), ntrials)
-
-    # run_PART_A_Q2()
+        print('bitstream length: 2000, total trial: 10000')
+        run_stochastic_computation(lambda : PART_A_Q2_computation(bitstream_len=1000), ntrials)
+    run_PART_A_Q2()
 
     # ==== A.Q4 ====
     def run_PART_A_Q4():
