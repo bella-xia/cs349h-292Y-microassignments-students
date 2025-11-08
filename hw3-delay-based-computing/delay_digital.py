@@ -27,26 +27,29 @@ def bin_to_delay(name,val,segments=10):
 def and_gate(circ,A,B):
     (Ap,An) = A
     (Bp,Bn) = B
-    Rp,Rn = None,None
-    raise NotImplementedError 
+    Rp = circ.add_gate(LastArrival())
+    Rn = circ.add_gate(FirstArrival())
+    circ.add_wire(Ap, Rp, 'A')
+    circ.add_wire(Bp, Rp, 'B')
+    circ.add_wire(An, Rn, 'A')
+    circ.add_wire(Bn, Rn, 'B')
     return (Rp,Rn)
-    
 
 def or_gate(circ,A,B):
     (Ap,An) = A
     (Bp,Bn) = B
-    Rp,Rn = None,None
-    raise NotImplementedError 
+    Rp = circ.add_gate(FirstArrival())
+    Rn = circ.add_gate(LastArrival())
+    circ.add_wire(Ap, Rp, 'A')
+    circ.add_wire(Bp, Rp, 'B')
+    circ.add_wire(An, Rn, 'A')
+    circ.add_wire(Bn, Rn, 'B')
     return (Rp,Rn)
- 
-
 
 def not_gate(circ,A):
     (Ap,An) = A
-    Rp,Rn = None,None
-    raise NotImplementedError 
+    Rp, Rn = An, Ap
     return (Rp,Rn)
-
 
 def build_logic_circuit():
     circ = DelayBasedCircuit(pulse_only=True)

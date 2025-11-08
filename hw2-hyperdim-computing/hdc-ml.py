@@ -134,7 +134,7 @@ def initialize(N=1000):
 
     train_data, test_data = torch.utils.data.random_split(dataset, [0.6, 0.4])
     HDC.SIZE = 10000
-    classifier = MNISTClassifier(ber=0.2)
+    classifier = MNISTClassifier()
     return train_data, test_data, classifier
 
 

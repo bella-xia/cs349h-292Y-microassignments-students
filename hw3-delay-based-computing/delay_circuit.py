@@ -100,13 +100,12 @@ class DelayBasedCircuit:
 
         g.render(name, format="png")
 
-
-
     def render(self,filename,timing,traces):
         nplots = len(list(traces.keys()))
 
-        fig, ax = plt.subplots(nplots,1,sharex=True)
+        fig, ax = plt.subplots(nplots,1,sharex=True, figsize=(6, len(traces)))
         window_height = 1.2
+        traces = dict(sorted(traces.items(), key=lambda kv: (self.gate_settling_time(self.gates[kv[0][0]],kv[0][1]), '0' + kv[0][0] + kv[0][1] if kv[0][1] == 'out' else '1' + kv[0][0] + kv[0][1])))
         for idx,(name,data) in enumerate(traces.items()):
             gate,port = name
             xs = list(map(lambda d: d[0], data))
@@ -119,10 +118,10 @@ class DelayBasedCircuit:
             measure_rect= matplotlib.patches.Rectangle((settle,0), 
                                     timing["measure"], window_height, 
                                     color ='green', alpha=0.2) 
-
+            
             seglen = timing["segment"]
             meas_lines = list(map(lambda seg: [(settle+seg*seglen,0), (settle+seg*seglen,window_height)], \
-                range(timing["n_segments"])))
+                range(timing["n_segments"] + 1)))
             meas_linecoll = matcoll.LineCollection(meas_lines, colors='green',alpha=0.5)
 
 
@@ -132,15 +131,14 @@ class DelayBasedCircuit:
             ax[idx].add_patch(measure_rect)
             ax[idx].add_collection(meas_linecoll)
             ax[idx].add_patch(settle_rect)
-            for i in range(timing["n_segments"]):
+            for i in range(timing["n_segments"] + 1):
                 ax[idx].text(settle+(i+0.5)*seglen, 0.2, str(i), color="green",alpha=0.7)
-
             ax[idx].scatter(xs,ys)
             ax[idx].add_collection(pulse_linecoll)
-            ax[idx].set_title("%s.%s" % (gate,port))
+            ax[idx].set_title("%s.%s" % (gate,port), pad=5)
 
         plt.xlim(0, timing["max_time"])
-        plt.ylim(0, 1.2)
+        plt.ylim(0, window_height)
         plt.xlabel("time (ns)")
         fig.tight_layout()
         plt.savefig(filename, bbox_inches='tight')
