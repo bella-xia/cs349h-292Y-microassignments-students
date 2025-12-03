@@ -13,7 +13,7 @@ def grade_optimizer(assignInfo):
     
     # constants you may find useful
     latePenalty = 0.08
-    totalGraceDays = 3
+    availGraceDays = 3
 
     grades = {}
     # an expression that will eventually count the total number of grace days
@@ -25,27 +25,18 @@ def grade_optimizer(assignInfo):
         # we will create a new integer variable named grace{assignmentname} for each assignment
         # this variable will be set to the number of grac days used for that assignment.
         asgnGraceDays = pulp.LpVariable(f"grace{assign}",lowBound=0, cat="Integer")
+        assignmentGrade = (stats["grade"] - latePenalty*(stats["daysLate"] - asgnGraceDays))
 
-        # FIXME: modify this assignment to compute the assignment grade with the grace days applied
-        assignmentGrade = (stats["grade"] - latePenalty*(stats["daysLate"]))
+        gradeMax.addConstraint(asgnGraceDays <= stats["daysLate"])
+        gradeMax.addConstraint(assignmentGrade >= 0)
 
-        # FIXME: add a constraint that ensures the assigned number of grace days is less than or equal to the days late
-        gradeMax.addConstraint(1 < 0)
-
-        # FIXME: add a constraint that ensures the assignment grade is greater than zero
-        gradeMax.addConstraint(1 < 0)
-
-        # FIXME: these expressions update the total grade and the total number of grace days
         totalGrade += assignmentGrade*stats["totalGrade"]
         totalGraceDays +=asgnGraceDays 
 
-    # FIXME: Add the following constraint: the total number of grace days must be less than or equal to three
-    gradeMax.addConstraint(1 < 0)
-
-    #  FIXME: set the expression to maximize 
-    gradeMax.setObjective(0)
-
+    gradeMax.addConstraint(totalGraceDays <= availGraceDays)
+    gradeMax.setObjective(totalGrade)
     gradeMax.solve()
+
     #reports the optimizer status
     print("==== Status ====")
     print(gradeMax.status)

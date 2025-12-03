@@ -213,7 +213,7 @@ class OBCDiffeqSystem:
 
 
 def simple_obc_phaseonly():
-    EXERCISE =  1
+    EXERCISE =  4
     random.seed(5552321)
     nomFreq = math.pi
     # the natural frequency may only change by 30% of nominal
@@ -269,7 +269,7 @@ def simple_obc_phaseonly():
 
 
 def simple_obc_freqonly():
-    EXERCISE = 1
+    EXERCISE = 5
     minFreq = 5.6
     maxFreq = 6.2
     random.seed(5552321)
@@ -323,7 +323,7 @@ def simple_obc_freqonly():
 
 
 
-#simple_obc_phaseonly()
-#simple_obc_freqonly()
+# simple_obc_phaseonly()
+simple_obc_freqonly()
     
 

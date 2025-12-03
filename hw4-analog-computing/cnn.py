@@ -70,13 +70,14 @@ class CNNDiffeqSystem:
     def diffeqs(self,x,t):
         vecFn = np.vectorize(lambda i: 
                              sum(np.multiply(self.A[i], np.clip(x,-1,1))) + sum(np.multiply(self.B[i],self.U)) + self.Z[i] - x[i])
+                             # sum(np.multiply(self.A[i], 2 / (1 + np.exp(-x)) - 1)) + sum(np.multiply(self.B[i], self.U)) + self.Z[i] - x[i])
         
-        dx = vecFn(np.arange(self.n*self.m))
+        dx = vecFn(np.arange(self.n*self.m)) # * 10
         return dx
 
     def run(self, time, npts=100):
         def ddt(time, x):
-            return self.diffeqs(x,time)
+            return self.diffeqs(x,time) 
         print("<running solver>")
         times = np.linspace(0,time,npts)
         sol = scipy.integrate.solve_ivp(ddt, [0,time], self.initVals, t_eval=times)
@@ -121,6 +122,7 @@ def run_cnn():
 
     #instantiate CNN
     cnn = CNNDiffeqSystem(28,28)
+    # cnn.initVals = np.random.uniform(0, 0.1, 28*28)
     cnn.initVals = np.zeros(28*28)
     #set image as forcing function provided to U matrix.
     cnn.set_image(pixelData,scale=1.0)
